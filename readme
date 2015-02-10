@@ -31,3 +31,16 @@ Simply running the executable that was created in the compile
 step is sufficient. It is best practice to create a wrapper that
 will call the executable and, when complete, organize the input
 and output files.
+
+References:
+Wange JD, Cofer-Shabic SV, Chin Fatt J. 1988. Finite element characteristic
+advection model, J. Hyd. Eng. 114: 1098-1114.
+
+Wang JD. 1990. Numerical modeling of bay circulation. Pages 1033-1066
+in B. Le Mehaute and D. M. Hanve, Eds. The Sea - Ocean Engineering Science
+vol. 9, Part B. Wiley-Interscience, New York.
+
+Wang, JD, Luo J, Ault JS. 2003. Flows, salinity, and some implications
+for larval transpor in South Biscayne Bay, Florida. Bull. of Mar. Sci.
+72(3): 695-723.
+
