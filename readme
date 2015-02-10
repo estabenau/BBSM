@@ -1,0 +1,33 @@
+2015-02-06
+
+This folder contains the source code and cmm files for the
+CAFE3D hydrodynamic model and its application to Biscayne Bay.
+
+The source code is in two files: 
+CAFE3DMAIN.F contains the hydrodynamic code (advection & diffusion)
+and is currently tested to run in 2D mode but is 3D compatible. 
+
+BBSUBS_CERP.F contains code to read and execute the model for the
+Biscayne Bay application. This code is not set up to be completely
+parameterized from the input files, some of the necessary
+information has been hard-coded into this file
+
+To compile:
+Recommended to use f95 (fortran compiler) available with in gcc.
+On UNIX systems, the following options worked well:
+
+f95 -O3 -fno-automatic BBMOD_COMPILE.F -o $your_executable_name
+
+Review f95 help files for details.
+
+To run:
+Review contents and 'readme' files found within the Input directory
+and subdirectories. At the time of this writing, the various
+*_run_files* are set up to represent our current understanding of
+canal flow, rain, evaporation, wind, and fresh groundwater flow to 
+Biscayne Bay.
+
+Simply running the executable that was created in the compile
+step is sufficient. It is best practice to create a wrapper that
+will call the executable and, when complete, organize the input
+and output files.

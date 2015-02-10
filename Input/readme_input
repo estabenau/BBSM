@@ -1,0 +1,30 @@
+2015-02-05
+The model reads the files ending in *_run_file.dat
+
+The matching file names contain a copy of the data.
+Feel free to create new input files and then replace
+the contents of the *run_file.dat with your input data.
+The model code demands that the files are in a specific 
+format so do not change the spacing or use other delimiters.
+
+USE the existing *run_file.dat formats as guides OR
+review the model code to set the forma.
+
+Canal flow is from the South Florida Water Management District
+Canal_flow_1996_2011_GMT.dat
+Canal_flow_run_file.dat
+GRIDV3
+
+Rain and evaporation data were from NOAA datasets and processed
+as described in Bull. of Marine Science publication by
+Stabenau, Renshaw, Luo, Kearns, and Wang submitted in 2015
+RAINMEVAP_1996_2011.dat
+RAINMEVAP_run_file.dat
+
+This file:
+readme_input
+
+Wind data is stored as U and V vectors. Details in same publication
+as the rain data
+VKWindUV_1996_2011_GMT.dat
+VKWindUV_run_file.dat

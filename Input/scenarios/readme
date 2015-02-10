@@ -1,0 +1,11 @@
+Model reads only the CERPGnSW_run_file.dat. Copy scenario of interest to that location before run.
+
+Available scenarios:
+
+CERPGnSW_zero.dat  - a zero ground or surfacewater flow scenario
+
+CERPGnSW_v4.dat - groundwater flow along western boundary of domain set based on
+		the surfacwater gradient between structures at ridge and coastal
+		water control structures. Details are described in Bull. of Marine
+		Science publication by Stabenau, Renshaw, Luo, Kearns, and Wang
+		submitted in 2015

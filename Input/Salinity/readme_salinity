@@ -1,0 +1,25 @@
+2012-07-20 
+
+Program reads only the following 4 files:
+BB26Salinity.dat
+BB28Salinity.dat
+CCSalinity.dat
+SFSalinity.dat
+
+These represent salinity data at locations BB26 and BB28 and 
+Caesars Creek (CR) and Safety Value (SF)
+
+The *.observed values are being stored as the observed values for these stations.
+The *.observed values should never be changed - ever. Just being clear about it.
+
+The *_35.dat files are data to be used for static conditions,
+that is constant salinity at 35 PSU for these stations.
+
+TO RUN THE MODEL - EITHER accept that the observed values are correct, copy them
+		into the appropriate files that the program reads (see note above)
+		and run the model...
+		OR update the boundary salinity as is appropriate for your scenario
+		and then copy those values into the 4 files that the program reads 
+		(again, see note above) and then run the model.
+
+

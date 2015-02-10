@@ -1,0 +1,14 @@
+C***** THIS IS PARAM FILE 'PARM2.CMM'
+C * * For 2-D use MXLVLS=1
+      PARAMETER (MXNDSL=6905,MXMQ=2*MXNDSL,MXLVLS=10,
+     1 MXBNDN=790,MXELS=13100,MXPCN=55,MXPCN2=2*MXPCN,
+     2 MAXDRY=1310,MAXNBR=10)
+c*****     mxndsl  :  max # of linear nodes
+c*****     mxmq    :  2*mxndsl
+c*****     mxndsq  :  max # of quadratic nodes
+c*****     mxlvls  :  max # of sigma levels
+c*****     mxbndn  :  max # of nodes along boundaries
+c*****     mxels   :  max # of triangular elements
+c*****     mxpcn   :  max # of prescribed concentration nodes (temp/sal)
+c ****     maxdry  :  max # of nodes that are permitted to go dry.
+c ****     maxnbr  :  max # of elements surrounding a dry node.
