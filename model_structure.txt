@@ -1,0 +1,116 @@
+Descriptive listing of model structure, input/output file format, associated scripts.
+
+program is in Fortan 
+
+Program starts with:  bbmod.f
+
+bbmod.f calls:
+	CF3DMAIN.F
+	BBSUBS_CERP.F
+
+CF3DMAIN.F  - main body of the CAFE3D model, a coastal ocean
+	circulation and transport model
+
+BBSUBS_CERP.F - this portion is hard coded to include the proper
+	input files as follows.
+
+	All times are UTM decimal day starting 0000 Jan. 1 1996 (confirm w/Wang)
+
+Input files start with the following:
+fort.1
+	Row 1: header for row 2, format:
+		print (2=no),elements,nodes,levels,levels_for_advection,initial_friction,initial_depth,
+		initial_eddy_viscosity,initial_wind_speed,ihtrd,icnv,kst,kdinc,idns,kdih,nc
+	Row 2: data to setup initial conditions for model
+	Row 3: initial sigmas
+	Row 4: Initialize variable size for elements
+	Row 5: description for origin of model grid
+	Row 6: description - not read by model
+	Row 7: start of element list format: node_id,node_type,x_coordinates,y_coordinates,depth
+	Row 6866: start description of connections to make triangles, nodes in clockwise order, format:
+			element_id,node_1,node_2,node_3
+	5-lines after element list is a data line that sets start time as 0 minutes after
+		model origin of 0000 1996-01-01, last time step 504576000. minutes later
+		and model time increment for reporting at 20 minutes.
+
+fort.8
+	File contains connection information for each node in the model to neighboring nodes
+fort.9
+	Define diffusion coefficients and hot-start information
+
+
+Location is BBCW/INPUT/$sub_directory
+
+$sub_directory/$files	Description
+	narrative
+
+/salinity/SFSalinity.dat		time(UTC) salinity salinity  
+/salinity/SFSalinity_35.dat		time(UTC) salinity salinity_set_at_35
+/salinity/CCSalinity.dat		time(UTC) salinity salinity  
+/salinity/CCSalinity_35.dat		time(UTC) salinity salinity_set_at_35
+
+/salinity/BB26Salinity.dat		time(UTC) salinity
+	BB26 = Biscayne Bay station 26, location near Rickenbacker Causeway bridge
+	Data used is (data from this file in PSU)-2.5 ** Wang2008.docx file said," For Rickenbacker
+		Causeway, BB26 was lwoer than the derived SV, however there were many gaps so
+		SF was used after lowering by 2.5 PSU: RC=SF-2.5
+/salinity/BB26Salinity_35.dat		time(UTC) salinity salinity_set_at_35
+
+/salinity/BB28Salinity.dat		time(UTC) salinity
+	BB28 = Biscayne Bay station 28, location near Bear Cut.  
+	Data used is (data from this file in PSU)-1 ** Wang2008.docx file said," For bear cut,
+		BB28 was lower than the derived SV, however there were may gaps so SF was used 
+		after lowering by 1 PSU: BC=SF-1
+/salinity/BB28Salinity_35.dat		time(UTC) salinity salinity_set_at_35
+
+/GRIDV3/CANAL_ELEMENTSv3.DAT		structured file
+	File breaks down as follows
+	#_elements
+		#_Nodes_per_element	Element_ID
+			Nodes_by_Number
+
+/GRIDV3/GNSWCERPELEM.DAT		structured file
+	same format as CANAL_ELEMENTSv3.DAT without Element_ID
+
+/scenarios/CERPGnSW.DAT			time(UTC) 17_columns(all_zero) 5_columns(with_data)
+	Sheet flow over surface and ground water flow have been set to zero in this file.
+	Remaining 5 columns represent discharge from 5 points.
+	These are varied based on model scenario, and the scenario file is saved under this name
+	to run the code.
+	In the current examples, the last 5 columns are -
+		Deering
+		Black Point
+		Culverts North
+		Culverts South
+		FPL-CardSound
+	I don't know the order
+	
+/RAINMEVAP.DAT				time(UTC) value(m)
+	Value is difference rain-evaporation
+	Average daily values for evapotranspiration for period 1965-2000 was determined for
+	Homestead and used to create an average year of evap data
+	Average year of rain data from 1996-2005 for 10 stations in bay (4kmx4km grid) was
+	determined, low variance and programmer chose to use cell 3 (arbitrary) as typical of bay
+	Average rain-evapotranspiration was calculated, one sample year is result, year is reused
+
+/CERP_Canal_Flow_96_06.txt		time(UTC) discharge_at_9_structures
+	Structure data for each time period is from DBHYDRO at 0.02 day time step
+	Structures are, in order:
+	G93
+	S22
+	S123
+	S21
+	S21A
+	S20
+	S20F
+	S20G
+	S197
+	Units are m^3/s  (for ref. 1 cfs = 0.0283 m^3/s)
+
+/VKWindUV9606.dat			time(UTC) x_value(m/s) y_value(m/s)
+	Data from NOAA NOS Virgina Key station, wind stress for model
+	values as x, y components of wind vector (m/s)
+
+
+Other files of interest
+	OUTPUT goes to files named fort.#, program lacks method to visualize output, Wang uses IDL
