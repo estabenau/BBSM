@@ -22,8 +22,10 @@ Review f95 help files for details.
 
 To run:
 Review contents and 'readme' files found within the Input directory
-and subdirectories. At the time of this writing, the various
-*_run_files* are set up to represent our current understanding of
+and subdirectories, make sure the paths written into the code are 
+correct. At the time of this writing, the various input files that
+are read  by the code include the string *_run_file* and contain
+data that represents our current understanding of
 canal flow, rain, evaporation, wind, and fresh groundwater flow to 
 Biscayne Bay.
 
