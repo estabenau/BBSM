@@ -1,0 +1,512 @@
+               ** USER'S MANUAL FOR CAFE3D HYDRODYNAMIC MODEL **
+                                  by
+                             John D. Wang
+                        Applied Marine Physics
+                                 RSMAS
+                      4600 Rickenbacker Causeway
+                         Miami, Fl 33149-1098
+                             (305)361-4648
+                          Fax: (305)361-4701
+
+       This manual describes a numerical hydrodynamic model of
+  the equations of motion using a finite
+  element method to discretize in horizontal space.
+       The major assumptions include the hydrostatic and the
+  Boussinesq approximations.
+       The model user should be very familiar with
+  hydrodynamic modeling and the finite element method in
+  general. A useful reference for this information is
+  contained in: Wang, J.D., Real-Time Flow in Unstratified
+  Shallow Water, J. Waterways and Harbors Div. ASCE, WW1, Feb
+  1978. or Wang J. D. and Connor J. J., Mathematical Modeling
+  of Near-Shore Circulation. TR200, R. M. Parsons Lab. for
+  Hydromechanics and Water Resources, Civil Enginnering,
+  Massachusetts Institute of Technology, Massachusetts,
+  Cambridge 02139, May 1975.
+       The user must first determine the domain for which a
+  solution is sought. It is useful to consider topography and
+  the location of stations from which boundary conditions can
+  be obtained in order to delimit the domain. Many of the
+  preliminary considerations are discussed in Wang, J.D.,
+  Blumberg, A.F., Butler, H.L., and Hamilton, P., Transport
+  Prediction in Partially Stratified Tidal Water, J. Hydraulic
+  Engineering, 116, 3, March 1990, 380-396.
+       Next, this domain is divided into a number of
+  subdomains called finite elements. For this model the finite
+  elements must be linear triangles. In laying out the grid,
+  the user should attempt to keep the triangles as close to
+  equilateral as possible. In irregular grids a good rule of
+  thumb states that the side length should not change by more
+  than 10% from element to element. When laying out the grid
+  all available knowledge or intuition about the flow field
+  should be utilized fully. Great improvements in results and
+  decreased cost of computation can be achieved in this way.
+  If this is not done carefully, a computer generated grid
+  would serve equally well.
+       When an apparently satisfactory grid has been drawn,
+  (it is useful to sketch the grid on a piece of transparent
+  graph paper which is overlaid the working chart), node
+  coordinates and depths should be determined. The coordinate
+  system to be used can be any right handed x-y system in
+  which the coordinates are measured in the same length units
+  (usually feet or meters) as used to specify the acceleration
+  of gravity (feet/s2 or meters/s2 respectively).
+       The nodal points are given external node numbers, which
+  do not necessarily have to be in sequential order. Avoiding
+  gaps in the numbering will allow optimal use of computer
+  memory, however.
+       The computer model will only operate with internal node
+  numbers that are determined by the order in which the nodal
+  information is read in, see later under description of
+  input. This allows for easy alteration of the grid and
+  addition or deletion of nodes.
+       The elements can now be numbered. The same external -
+  internal system is used as for the nodes. For each element a
+  connectivity table can then be generated. This table
+  consists of the three node numbers for each element. The 3
+  nodal numbers must be given so as to define a
+  counterclockwize diretion around the element. The first node
+  in this numbering is arbitrary.
+       The remaining information that the model requires
+  consists of physical parameters, integration variables,
+  input/output control and boundary conditions. Most of these
+  are explained in the input section of this manual. The
+  boundary conditions require special attention. If the user
+  is not familiar with B.C. for hydrodynamic models the above
+  references should be consulted. Basically, the B.C. can
+  consist of specifying the deformations (usually flows) or
+  forces (usually pressure and sometimes shear stresses),
+  since the momentum equations express relationships between
+  these variables. Because the model employs the hydrostatic
+  approximation, pressure is equivalent to surface elevation
+  for homogeneous water.
+       The present version of CAFE3D uses a matrix diagonalization
+  to allow more efficient solutions and wetting and drying.
+
+
+  MODEL INSTALLATION
+
+       Before using the model the user should make sure that
+  the arrays in the code have been dimensioned properly. This
+  involves: 1) Determine the numerical value of key variables
+  as described below. 2) Replace the dimensions in the ALL.CMM
+  include file with the numeric values of the key variables as
+  shown below.
+
+       The key variables are:
+
+           MXNDSL = MAXIMUM NUMBER OF NODES THAT CAN BE
+                    HANDLED BY THE PROGRAdM.
+           MXQ0BN = MAXIMUM NUMBER OF NODES WITH PRESCRIBED
+                    LOCAL X-FLOW = 0.
+           MAXQBN = MAXIMUM NUMBER OF NODES WITH PRESCRIBED
+                    LOCAL X-FLOW.
+           MXV0BN = MAXIMUM NUMBER OF NODES WITH PRESCRIBED
+                    LOCAL Y-FLOW = 0.
+           MAXVBN = MAXIMUM NUMBER OF NODES WITH PRESCRIBED
+                    LOCAL Y-FLOW.
+           MAXHBN = MAXIMUM NUMBER OF NODES WITH PRESCRIBED
+                    ELEVATION.
+           MAXBDR = MAXIMUM NUMBER OF LAND OR OCEAN
+                    BOUNDARIES.
+           MAXO   = MAXIMUM NUMBER OF NODES IN AN OCEAN
+                    BOUNDARY.
+           MAXBS  = MAXIMUM NUMBER OF ELEMENT SIDES ALONG ALL
+                    BOUNDARIES MULTIPLIED BY 3.
+           MAXRAD = MAXIMUM NUMBER OF RADIATION BOUNDARY CONDITION
+                    NODES.
+           MXFLUX = MAXIMUM NUMBER OF NODES WITH SOURCE/SINK.
+           MAXDRY = MAXIMUM NUMBER OF NODES THAT CAN GO DRY AND WET.
+
+  The PARAMETER statement is reproduced here for easy
+  reference and as an example:
+
+      PARAMETER(MXBW1=1,MXBW2=2*MXBW1,MXOBN=192,MXOBN2=2*MXOBN,
+     2 MXLB0N=575,MXLBN=129,MXLBN2=2*MXLBN,MXOSGM=13,
+     3 MXSGMN=16,MXFLUX=19,MXLKUP=22,MAXRAD=150)
+C * * For 2-D use MXLVLS=1
+      PARAMETER (MXNDSL=5595,MXMQ=2*MXNDSL,MXLVLS=5,
+     1 MXBNDN=590,MXELS=10500,MXPCN=55,MXPCN2=2*MXPCN,
+     2 MAXDRY=645,MAXNBR=9)
+c ****     mxndsl  :  max # of linear nodes
+c ****     mxmq    :  2*mxndsl
+c ****     mxlvls  :  max # of sigma levels
+c ****     mxbndn  :  max # of nodes along boundaries
+c ****     mxels   :  max # of triangular elements
+c ****     mxpcn   :  max # of prescribed concentration nodes (temp/sal)
+c ****     maxdry  :  max # of nodes that are permitted to go dry.
+c ****     maxnbr  :  max # of elements surrounding a dry node.
+c ****     mxobn   :  max # of open boundary nodes.
+c ****     mxlb0n  :  max # of land boundary nodes with normal flow set to 0.
+c ****     mxlbn   :  max # of land boundary nodes with specified normal flow.
+c ****     mxosgm  :  max # of ocean boundary segments
+c ****     mxsgmn  :  max # of nodes in on ocean boundary segment
+c ****     mxflux  :  max # of nodes with a volume sink/source
+c ****     mxlkup  :  max # of lookup elements for advection scheme. Use 22
+c ****     maxrad  :  max # of nodes with radiation boundary condition
+c
+       There are several named commons, which are used to store
+  frequently used variables. These commons are created as
+  separate include files. Wherever they should appear in the
+  code, an INCLUDE statement appears. Examples of common blocks are
+  included as files with extension .cmm.
+
+  The parameter MAXEL should be set to a value greater than
+  the number of elements in your problem.
+
+       If your problem has key variables that are numerically
+  less than the ones in your version of the main program, you
+  need do nothing. If you wish to use as little memory as
+  possible, the parameters should be as small as possible for
+  your problem.
+       Before compiling, you may want to review boundary
+  condition subroutines and make any necessary revisions.
+  Prescribed surface elevations are handled in STETAB (set eta
+  on boundary) and SETMWS (set mean water surface). Prescribed
+  flows are handled in STQB. Finally, for wind simulations the
+  subroutine WINDS should be customized to return the
+  components of surface stress divided by density in TAUWX and
+  TAUWY.
+       To make a 2-D run do the following: set NLEV and NLEVAD = 1
+  (line 2). Set IADVDF=0 and IMULT=9999999 (line group 8).
+
+    
+<><>            INPUT            <><>
+
+
+LINE GROUP 1: PARAMETERS AND OPTIONS. Two lines.
+  Line 1:  Names of variables defined in line 2 (A80)
+  Line 2:  Options and parameters      (13I5,I10)
+          IPRINT    = 0, MINIMUM ECHO OF INPUT TO  UNIT 2
+                      1, MEDIUM ECHO OF INPUT TO UNIT 2
+                      2, FULL ECHO OF ALL INPUT TO UNIT 2
+                     -1, MINIMUM ECHO OF INPUT, ALSO MINIMUM
+                         OUTPUT. USE FOR FINAL PRODUCTION RUNS
+          NMEL      = NUMBER OF ELEMENTS
+          NMNP      = NUMBER OF NODES
+          NLEV      = Number of vertical levels.
+          NLEVAD    = Number of vertical levels for advection-diffusion
+          IFRIC     = 0, Bottom friction from internal mode
+                    = 1, VARIABLE FRICTION COEFFICIENTS. VALUES
+                      TO BE READ FOR EACH ELEMENT, SEE LINE GROUP 5.
+                    = 2, CONSTANT FRICTION COEFFICIENT. VALUE OF FIRST
+                      ELEMENT USED, SEE LINE GROUP 5.
+          IDEPTH    = 1, CONSTANT DEPTH. VALUE OF FIRST NODE USED,
+                      SEE LINE GROUP 3.
+                    = 2, VARIABLE DEPTH. VALUES TO BE READ
+                      FOR EACH NODE, SEE LINE GROUP 3.
+          IEDVIS    = 1, CONSTANT VISCOSITY COEFFICIENTS. VALUE AS
+                      FOR IFRIC.
+                    = 1, VARIABLE VISCOSITY COEFFICIENTS. VALUE AS
+                      FOR IFRIC
+          IWIND     = 1, use WINDSP and WINDIR read later
+                      2, use subroutine VARWND, transient but homogen.
+                      3, use subroutine WNDFLD, transient and heterog.
+          IRDHT     = 0, Elevations and vel set to zero (COLD START).
+                    = 1, HOT START. Variables read for unit iuhot
+          ICNVEC    = 0, Advective acceleration terms ignored
+                      1, Adv. acc. terms included
+                      2, Adv. acc. terms included and calc. from 3D results.
+          KSTART    = Time step at which hydro output will begin to be
+                      written to disk.
+          KDINCR    = Interval (in time steps) between output
+                      to disk of flows and elevations.
+          IDNSTY    = 0, Initial density constant. Value read later in input.
+                      1, Initial density constant for each vertical layer
+                      2, Variable density, values to be read later in input.
+          KDIHOT    = Time steps for which variables are stored
+                      for hot starting another run.
+          NCONSTIT  = Number of constituents (1=sal is hardwired for density
+                      calculation). If salinity is not a wq parameter, the
+                      density calculation needs to be modified.
+*****
+LINE GROUP 2a: Sigma levels for layer interfaces (*) (NLEV+1 values)
+              -1., ..... , 0.
+
+LINE GROUP 2b: Eddy visc, z0, ndtau
+
+LINE GROUP 3: TITLE.       Two lines (20A4).
+          TITLE  = TITLE TO BE PRINTED AT TOP OF OUTPUT, (20A4/20A4).
+
+*****
+LINE GROUP 4: NODAL INFORMATION.    (2I5,7F10.0)
+          I = 1,NMNP,1
+          NEXT(I)   = EXTERNAL NODE NUMBER. (NUMBER THAT YOU ASSIGNED
+                      TO THE NODE.)  NEXT(I) SHOULD BE INPUT SO
+                      THAT NBAND, THE BANDWIDTH IS MINIMIZED. NBAND IS
+                      THE MAXIMUM OVER ALL ELEMENTS OF 1 PLUS
+                      MAXIMUM INTERNAL NODE NUMBER (NUMBER THAT
+                      COMPUTER USES)  MINUS THE MINIMUM INTERNAL
+                      NODE NUMBER FOR ANY ELEMENT.
+                      THE INTERNAL NODE NUMBER, NINT(I), IS DETERMINED
+                      BY THE ORDERING DURING INPUT:
+                      NINT(NEXT(I))=I  FOR I=1,NMNP.
+          NBC(I)    = NODE CODE
+                    = 0, INTERNAL NODE
+                    = 1, PRESCRIBED LOCAL X FLOW, QB
+                    = 2, PRESCRIBED SURFACE ELEVATION, HB
+                    = 3, PRESCRIBED SURFACE ELEVATION AND LOCAL X FLOW,
+                         HB AND QB
+                    = 4, PRESCRIBED LOCAL X FLOW, QB. LOCAL Y FLOW SET
+                         TO ZERO
+                    = 5, PRESCRIBED SURFACE ELEVATION, HB, AND LOCAL X
+                         FLOW, QB. LOCAL Y FLOW SET TO ZERO
+                    = 6, SOURCE/SINK NODE
+                    = 7, SOURCE/SINK NODE WITH PRESCRIBED NORMAL FLOW
+                    = 8, SOURCE/SINK NODE WITH BOTH FLOWS SET TO ZERO
+                    = 9, LOCAL X-FLOW IS EQUAL TO ZERO
+                    =10, LOCAL X-FLOW AND Y-FLOW SET TO ZERO
+                    =11, Radiation BC
+                    =14, Radiation BC, local y-flux set to zero
+
+++COMMENTS: LOCAL X IS IN THE DIRECTION GIVEN BY QBANG OR Q0BANG
+            WITH RESPECT TO THE GLOBAL X AXIS USING COUNTERCLOCKWIZE
+            ANGLE CONVENTION. THE INTERNAL NODE NUMBER IS EQUAL TO I.
+
+          XORD(I)   = X COORDINATE
+          YORD(I)   = Y COORDINATE
+          DEPTH(I)  = WATER DEPTH WITH RESPECT TO DATUM, (USUALLY MLW).
+          DUM1-     = DUMMY VARIABLES USED ACCORDING TO NBC, SEE BELOW
+          DUM4
++++COMMENT: THE DUMMY VARIABLES ARE USED AS FOLLOWS:
+     NBC  = 0  NOT USED
+          = 1  DUM1=QB, DUM2=QBANG
+          = 2  DUM1=HB, DUM2=ALAG
+          = 3  DUM1=HB, DUM2=ALAG, DUM3=QB, DUM4=QBANG,
+          = 4  DUM1=QB, DUM2=QBANG,
+          = 5  DUM1=HB, DUM2=ALAG, DUM3=QB, DUM4=QBANG,
+          = 6  DUM1=FLUX
+          = 7  DUM1=FLUX, DUM2=QB, DUM3=QBANG
+          = 8  DUM1=FLUX
+          = 9  DUM2=Q0BANG
+          =10
+          =11
+          =12
+          =13
+          =14
+          =15
+          =16
+          =17
+*****
+LINE GROUP 5: ELEMENT CONNECTIVITY AND DATA.
+                      (4I5,4F10.0)
+          I=1,NMEL,1
+          NELM(I)   = EXTERNAL ELEMENT NUMBER
+          ICON(I,J) = EXTERNAL NODE NUMBER CONNECTIVITY.
+                      COUNTERCLOCKWIZE. (J=1,3)
+          CF(I)     = BOTTOM FRICTION COEFFICIENT.
+                      IF CF(1) > 5. AND IBFRIC = 1
+                      THEN CF(1) - 5. IS TAKEN AS MANNING'S N
+                      FOR ALL NODES.
+          EDXX(I)   = EDDY VISCOSITY
+          EDYY(I)   = EDDY VISCOSITY
+          EDXY I)   = EDDY VISCOSITY
+*****
+ LINE GROUP 6: PARAMETERS FOR HANDLING WETTING AND DRYING (I10,4F10.0)
+          IOPDRY    = 1, ACTIVATE DRYING OPTION
+                    = 0, NO WETTING OR DRYING
+          HLIMIT    = DEPTH VALUE, ONLY NODES WITH DEPTH > HLIMIT ARE
+                        INCLUDED IN WETTING AND DRYING
+          HMIN      = DEPTH VALUE, MIN DEPTH ALLOWED BEFORE NODE
+                        WILL BE CONSIDERED DRY
+          VOLFCT    = FACTOR DETERMINING THE RATE OF WETTING FOR NODE
+          HREDRY    = INCREASE IN DEPTH (ABOVE HMIN) IN ORDER FOR
+                        NODE TO BE CONSIDERED WET AGAIN
+*****
+ LINE GROUP 6A: Inlets (I5)
+          NNLTS     = Number of inlets
+ if (NNLTS .gt. 0) give inlet parameters
+
+*****
+ LINE GROUP 7: SYSTEM PROPERTIES. ONE LINE (F10.0,E10.2,2F10.0,I5,F5.0)
+          ALATT     = LATITUDE, (NORTH IS POSITIVE) IN DEGREES.
+          OMEGA     = RADIAN SPEED OF EARTH ROTATION=.72722E-4
+          GRAVT     = GRAVITATIONAL ACCELERATION.
+          PERIOD    = CHARACTERISTIC PERIOD TO BE USED FOR BOUNDARY
+                      CONDITIONS.
+          DENSTY    = Reference density
+          VKRMN     = VON KARMAN CONSTANT ~ 0.4
+*****
+ LINE GROUP 7A: INITIAL LAYER DENSITIES (FREE FORMAT)
+          DENSTY(I,LEV) = DENSITY OF LAYER LEV. 1 UP TO NMNP*NLEV
+                          VALUES DEPENDING ON IDNSTY.  SEE SUBROUTINE
+                          DFDNST
+*****
+LINE GROUP 8: INTEGRATION PARAMETERS. (3F10.0,I5,F5.0,2I5,3I10)
+          STRTIM    = Start time of model simulation
+          ENDTIM    = End time of model simulation
+          TINC      = Time increment (model time step)
+          N0        = External node for which stability is checked.
+          BOUND     = Bound on surface elevation variation at node N0
+          ISMTH     = Interval in time steps between spatial smoothing
+                      of surface elevations. Normally ISMTH should be
+                      as large as possible.
+          ASMTH     = Smoothing coefficient. 0. => NO SMOOTHING.
+                       1. => MAXIMUM SMOOTHING.  USE 0.
+          IADVDF    = 0, No advection diffusion
+                      1, Include advection-diffusion module
+          MULTAD    = Advection-diffusion time step multiplier, must
+                      be even and for 3-D IMULT must be a divisor and
+                      half of MULTAD or less. E.G imult=2, multad=10.
+                      Or imult=5, multad=10
+          IMULT     = Internal solution time step multiplier.
+                      Make this larger than the largest expected
+                      number of time steps to avoid internal (3D) solution.
+          ISTART    = Begin output to unit 2 after ISTART time steps
+          NOUT      = Interval in time steps between output to unit 2.
+                      No output before ISTART time steps.
+*****
+
+
+LINE GROUP 9: THIS GROUP NO LONGER USED
+*****
+LINE GROUP 10: OCEAN BOUNDARY DATA. ONE LINE (8I10)
+          NSEGMT    = NUMBER OF OCEAN BOUNDARIES
+          NMHNPB(I) = NUMBER OF NODES IN SEGMENT I OF OCEAN
+                      BOUNDARY. (I=1,NSEGMT)
++++NOTE: SEE COMMENT UNDER GROUP 7 AND APPLY HERE AS WELL.
+*****
+LINE GROUP 11: OCEAN BOUNDARY DATA CONTINUED.
+                  SEGMENT CONNECTIVITY. ONE BOUNDARY AT A TIME
+                  (20I4)
+          ICONB(I,J)= EXTERNAL NODE NUMBERS OF SEGMENT I
+                      IN SEQUENTIAL ORDER SUCH THAT THE DOMAIN IS TO
+                      THE LEFT OF THE DIRECTION OF ADVANCE.
+*****
+LINE GROUP 12: BOUNDARY ELEMENTS.
+          NMBEL     = NUMBER OF ELEMENT SIDES OF TOTAL BOUNDARY.
+                      ONE LINE (I10)
+          NBN(I)    = ELEMENT NUMBER AND TWO NODE NUMBERS
+                      CORRESPONDING TO EACH SIDE. (I=1,NMBEL)
+                      SECOND AND FOLLOWING CAR S. (20I4)
++++COMMENT: THE DOMAIN TO THE LEFT CONVENTION SHOULD BE FOLLOWED.
+*****
+LINE GROUP 13: WIND INFORMATION (3F10.0)
+          WINDSP   = WIND SPEED IN UNITS CONSISTENT WITH GRAVITY.
++++COMMENT: THE WIND DRAG COEFFICIENT IS COMPUTED ASSUMING
+            WINDSP IS IN M/S. SEE CODE FOR SUBROUTINE WINDS.
+          WDIRC    = WIND DIRECTION (BLOWING FROM!) RELATIVE
+                      TO X-AXIS IN DEGREES.
+          WTRAMP   = WIND TIME RAMP DURATION, SEE SUBROUTINE WINDS.
+*****
+LINE GROUP 14: STORM PARAMETERS. (6F10.0)
+          DP       = CENTRAL PRESSURE DEPRESSION, (INCHES OF HG)
+          VF       = FORWARD SPEED (KNOTS)
+          R        = RADIUS TO MAXIMUM WINDS, (NAUTICAL MILES)
+          ALPHA    = DIRECTION OF TRAVEL (DEGREES)
+          XS       = X-COORDINATE OF STORM CENTER (M)
+          YS       = Y-COORDINATE OF STORM CENTER (M)
+!!!NOTE: IF R < 0 THEN A STORM WILL NOT BE SIMULATED. THE STORM IS
+DEFINED IN SUBROUTINE STORM. SUBROUTINE MVHUR MOVES THE STORM CENTER TO
+ITS NEW LOCATION. THESE RESULTS ARE USED IN SUBROUTINE WNDFLD TO
+DETERMINE SURFACE SHEAR STRESSES AT EACH TIME STEP.
+*****
+LINE GROUP 14: MASS STORAGE FILE SPECIFICATIONS. (8I10)
+
+  !!NOTE!! SINCE MASS STORAGE DEVICES DIFFER FROM MACHINE TO MACHINE
+           THE FOLLOWING IS ONLY AN EXAMPLE OF THE TYPE OF INPUT THAT
+           COULD CONVENIENTLY BE PROVIDED AT THIS POINT. THIS EXAMPLE
+           DIFFERS FROM THE PROGRAM ITSELF WHICH SHOWS YET ANOTHER
+           WAY OF HANDLING THIS MATTER. IN OTHER WORDS, THIS INPUT AND
+           THE CORRESPONDING CODING IN THE PROGRAM SHOULD BE CUSTOMIZED
+           FOR THE USER'S MACHINE AND APPLICATION.
+
+          IUNITQ    = UNIT FOR FLOWS STORED AT KDINCR INTERVALS
+          IUNITH    = UNIT FOR depths STORED AT KDINCR INTERVALS.
+          IURDHT    = UNIT FOR reading hot start conditions
+          IUWTHT    = UNIT FOR writing hot start conditions
+          IU3DQ     = Unit for storing 3d results at KDINCR intervals
+
+The direct access files containing hydrodynamic data are written from
+FORTRAN using the following statements
+
+      OPEN(IUNITQ,ACCESS='DIRECT',STATUS='UNKNOWN',RECL=NMNP2)
+      OPEN(IUNITH,ACCESS='DIRECT',STATUS='UNKNOWN',RECL=NMNP)
+
+      WRITE(IUNITQ,REC=NUMREC)(QX(I),QY(I), I=1,NMNP)(QNLT12(I), I=1,NNLTS)
+      WRITE(IUNITH,REC=NUMREC)(HT(I), I=1,NMNP)
+
+QX, QY are the nodal discharges (flow per unit width [m2/sec])
+HT     is the nodal total water depth [m]
+
+To get velocities, divide QX and QY by HT
+
+***   ***   ***   ***   ***   ***   ***   ***   ***   ***   ***
++++COMMENT: THE FOLLOWING INPUT ARE ONLY REQUIRED IF
+             THE APPROPRIATE OPTION SO SPECIFIES.
+
+***IF IHTC = 1 INCLUDE DATA FOR EACH OCEAN BOUNDARY NODE IN THE
+               SEQUENCE THAT THE BOUNDARY NODES APPEAR IN THE
+               GROUP 3 LINES. PAIRS OF AMPLITUDE AND TIME
+               WITH THE FIRST TWO VALUES EQUAL TO ZERO SHOULD BE GIVEN.
+               FORMAT(8F10.0)
+
+          HTC(I,J)  = PAIRS OF AMPLITUDE AND TIME. (J=1,2*NMHTC)
+
+***IF INPUTH = 1  (8F10.0)
+          ETA(I)    = VALUES TO BE USED FOR INITIALIZING ELEVATIONS.
+                           I=1,NMNP
+
+***IF INPUTQ = 2 INCLUDE DATA FOR INITIAL VALUES OF FLOWS.
+
+          Q(I)      = INITIAL FLOWS IN PAIRS OF X- AND Y-COMPONENTS.
+                      INTERNAL NODE ORDERING. I=1,2*NMNP
+
+The input for the advection-diffusion module are read from
+unit 9.
+
+
+Line group 1: Advection-Diffusion control parameters (*)
+          NMPBN(LEV) = Number of prescribed conc boundary nodes, LEV=1
+                       for now.
+          IDFVAR     = Switch for constant or variable diff. coeff.
+                       Not used.
+          ISWAD      = 1, Advection only
+                       2, Advection and diffusion
+                       3, Diffusion only
+          NDISK      = Interval in advection diffusion time steps
+                       between output of conc. to disk.
+                       For example:  time step = 60 sec.
+                       With MULTAD = 10 (adv-diff solved every 10 hydro
+                       time steps) then adv-diff time step
+                       is MULTAD*60 = 600 sec
+                       To store salinities every hour,
+                         NDISK = (3600/600) =  6
+          ICONC1     = 0, Initial concentrations constant
+                     = 1, Initial concentrations variable, use for hot start
+          ILOOK      = 1, Write lookup table at end of run
+                     = 2, Read lookup table at beginning of run, then
+                          write updated table at end of run.
+          IHOT       = Not used
+          IHALF      = 0, two velocity records per advection-diffusion
+                          time step
+                       1, one velocity record, interpolate to get another.
+
+<<<<                                                    >>>>
+<<<<                  OUTPUT                            >>>>
+<<<<                                                    >>>>
+     ONLY THE DATA WRITTEN UNTO MASS STORAGE FILE
+IS DESCRIBED IN THIS SECTION. THE HARD COPY LISTING
+OF OUTPUT IS SELF EXPLANATORY.
+     WHEN ITIME >= KSTART AND
+     WHEN ITIME/KDINCR*KDINCR=ITIME THE FOLLOWING RESULTS ARE
+          WRITTEN:
+             IUNITQ                          IUNITH
+     Q(I) = LAYER FLOWS,            H(I) = LAYER DEPTHS,
+           (I=1,NMNP2)                     (I=1,NMNP)
+
+     WHEN KDISC=ITIME, THE FOLLOWING RESULTS ARE
+          STORED ON:
+             IUNQ                              IUNETA
+     Q(I), I=1,2*NMNP                    ETA(I), I=1,NMNP
+
+THESE DATA CAN BE USED TO HOT START THE MODEL IN A SUBSEQUENT RUN.
+
+$$$$$$$$$$$$$$$$$$ EXAMPLE $$$$$$$$$$$$$$$$$$$$$
+
+          Example inputs and corresponding result outputs are included
+with the copy of the program provided to you.
+
+
+#################### THIS IS THE END OF THE USER'S MANUAL ##############
+
