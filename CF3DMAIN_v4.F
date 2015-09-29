@@ -1715,6 +1715,8 @@ C          IF(DE .LT. 0.)WRITE(*,*)'NEG DEPTH',I,DE,ICON(I,1),
 C     1      ICON(I,2),ICON(I,3)
           IF(DE .LT. 0.)WRITE(*,*)'NEG DEPTH',I,DE,ICON(I,1),
      1      ICON(I,2),ICON(I,3),'WindSpd',WINDSP
+C	Altered depth (DE/2.2) to simulate increased friction as
+C       if shallower
           CFEL=AN*AN*GRAVT/(DE/2.2)**0.5
 C         CFEL=AN*AN*GRAVT/(DE/3.)**0.333333
           DO 150 J=1,3
