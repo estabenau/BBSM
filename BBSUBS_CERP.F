@@ -96,8 +96,9 @@ C 20   CONTINUE
       END
       SUBROUTINE ELINFO
       INCLUDE 'ALL.CMM'
+      OPEN(52,FILE='./Input/GRIDV4/ELEMENTS_V4.DAT',STATUS='OLD')
       DO 15 L=1,NMEL
-      READ(1,1007)NELM(L),(ICON(L,J),J=1,3),CF(L),EDXX(L),EDYY(L),
+      READ(52,1007)NELM(L),(ICON(L,J),J=1,3),CF(L),EDXX(L),EDYY(L),
      1  EDXY(L)
       NILM(NELM(L))=L
  1007 FORMAT(4I5,4F10.0)
@@ -452,7 +453,7 @@ C     NOTE order of the columns
       SAVE NMSTRCP1,ISWITCH
       IF(ISWITCH .EQ. 1)THEN
         ISRCEL=0
-       OPEN(921,FILE='./Input/GRIDV3/CANAL_ELEMENTSv3.DAT',
+       OPEN(921,FILE='./Input/GRIDV4/CANAL_ELEMENTS_V4.DAT',
      1    FORM='FORMATTED')
         READ(921,*)NMSTRC
 C * Number of structures. Add one to allow for time stamp
@@ -585,7 +586,7 @@ C Further reduced during several storm events here - work-around to a problem
       DATA ISWITCH/1/
       SAVE ISWITCH,NMGNSZONESP1
       IF(ISWITCH .EQ. 1)THEN
-       OPEN(921,FILE='./Input/GRIDV3/GNSWCERPELEM.DAT',STATUS='OLD')
+       OPEN(921,FILE='./Input/GRIDV4/GNSWCERPELEM_V4.DAT',STATUS='OLD')
         IGSWEL=0
         READ(921,*)NMGNSZONES
 C * Number of gns zones. Add one to allow for time stamp

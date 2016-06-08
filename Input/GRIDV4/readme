@@ -1,0 +1,16 @@
+This directory contains information for the v4 grid including the model domain itself in 2 files:
+	NODES_V4.DAT    	- defines the location of each node in the model domain in meters X or Y
+	ELEMENTS_V4.DAT 	- defines the connectivity between NODES to create the triangular elements
+				** note: the number of entries for these files needs to match the values in
+                                   the fort.1 input file 
+AND
+Two files in describing the input locations of boundary flows:
+	GNSWCERPELEM.DAT 	- defining 22 defined zones (groups of elements where water enters system)
+				  These are split into zones for groundwater and zones for surface water
+				  There is some overlap between these zones - more than one zone can add
+				  water to the same element
+	CANAL_ELEMENTSv3.DAT 	- contains 9 groupd of elements for the input location for the canals
+
+These file names and directory paths are hard coded into the model code 
+
+
