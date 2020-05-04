@@ -34,7 +34,14 @@ step is sufficient. It is best practice to create a wrapper that
 will call the executable and, when complete, organize the input
 and output files.
 
-References:
+PRIMARY REFERENCE to BBSM Version 4
+Stabenau, E., Renshaw, A., Luo, J., Kearns, E., & Wang, J. D. (2015). 
+Improved coastal hydrodynamic model offers insight into surface and 
+groundwater flow and restoration objectives in Biscayne Bay, Florida,
+USA. Bulletin of Marine Science, 91(4), 433-454.
+
+Other References:
+
 Wange JD, Cofer-Shabic SV, Chin Fatt J. 1988. Finite element characteristic
 advection model, J. Hyd. Eng. 114: 1098-1114.
 
