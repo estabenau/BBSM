@@ -3,6 +3,12 @@
 This folder contains the source code and cmm files for the
 CAFE3D hydrodynamic model and its application to Biscayne Bay.
 
+THIS IS NOT AN INTERACTIVE MODEL - it is quite old, written in
+FORTRAN, operates from the command line, and reads from hard-
+coded paths. Not a user friendly model. It will be up to the
+user to read through the code, validate input files, and manage
+model output.
+
 The source code is in two files: 
 CAFE3DMAIN.F contains the hydrodynamic code (advection & diffusion)
 and is currently tested to run in 2D mode but is 3D compatible. 
@@ -11,6 +17,10 @@ BBSUBS_CERP.F contains code to read and execute the model for the
 Biscayne Bay application. This code is not set up to be completely
 parameterized from the input files, some of the necessary
 information has been hard-coded into this file
+
+These two files are listed within BBMOD_COMPILE.F so you'll 
+only need to run the compiler on that in order to compile
+the full model.
 
 To compile:
 Recommended to use f95 (fortran compiler) available with in gcc.
@@ -23,9 +33,9 @@ Review f95 help files for details.
 To run:
 Review contents and 'readme' files found within the Input directory
 and subdirectories, make sure the paths written into the code are 
-correct. At the time of this writing, the various input files that
-are read  by the code include the string *_run_file* and contain
-data that represents our current understanding of
+correct for your system. At the time of this writing, the various
+input files that are read  by the code include the string *_run_file* 
+and contain data that represents our current (2018) understanding of
 canal flow, rain, evaporation, wind, and fresh groundwater flow to 
 Biscayne Bay.
 
@@ -33,6 +43,10 @@ Simply running the executable that was created in the compile
 step is sufficient. It is best practice to create a wrapper that
 will call the executable and, when complete, organize the input
 and output files.
+
+TO EXTRACT DATA:
+A sample Python 3 script is included to show how to extract
+useable data from the binary output fort.16 (salinity) file.
 
 PRIMARY REFERENCE to BBSM Version 4
 Stabenau, E., Renshaw, A., Luo, J., Kearns, E., & Wang, J. D. (2015). 
