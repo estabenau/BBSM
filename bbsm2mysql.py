@@ -26,22 +26,22 @@ alt=sys.argv[3]
 testyn=sys.argv[4]
 mt=dt.datetime(1996,1,1,00,20,00) 		#CHECK must match start date in model
 
+#DATA directory, data source, working directory need to be updated to match your system
 
-#DATA directory, data source, working directory, data requested
-
-data_dir = "/data/models_out/%s/v%s/%s/" % (model,version,alt)
-infilename = "fort_%s.16" % (alt)  
-working_dir = "/data/models/BBSM/util/" 	# input location for the station list
-#station_node = "serafy_stations.txt"
+data_dir = "/data/models_out/%s/v%s/%s/" % (model,version,alt) 	# location of model binary file
+infilename = "fort_%s.16" % (alt)  				# model binary salinity file name
+working_dir = "/data/models/BBSM/util/" 			# input location for the station bbsm_sites.csv file
 
 #########################################
 # Determine element number of sites to be extracted
 # from list built from modeland. Could do this at
 # time of extract to make more flexible
+#
+# Structure of file bbsm2modeland_sites.csv (*note element & node combinations come from model data)
+# station_ID,station_name,longitude,latitude,element,node_1,node_2,node_3
+#    
 #########################################
-stations = np.genfromtxt(working_dir + "bbsm2modeland_sites.csv",delimiter=',',dtype=[('station_ID','|S10'),('station_name','|S10'),('long','<f8'),('lat','<f8'),('element','<i8'),('node1','<i8'),('node2','<i8'),('node3','<i8')])
-#stations = np.genfromtxt(working_dir + station_node,delimiter=',',dtype=[('station_ID','|S10'),('node1','<i8')])
-#print stations['station_ID'] # saved this as handy way to get handle on data
+stations = np.genfromtxt(working_dir + "bbsm_sites.csv",delimiter=',',dtype=[('station_ID','|S10'),('station_name','|S10'),('long','<f8'),('lat','<f8'),('element','<i8'),('node1','<i8'),('node2','<i8'),('node3','<i8')])
 
 nnodes = 6857    # number of nodes in the model
 nodes = list(range(nnodes))	# make a list
@@ -54,8 +54,10 @@ nodes = nodes + 1		# add one to make array from 1 to number of nodes
 
 infile = open(data_dir + infilename, mode='rb')
 
-#steps=2 # number of 20 min. time steps that will be extracted (420480 in 16 years)
-#steps=420480 # number of 20 min. time steps that will be extracted (420480 in 16 years)
+# number of 20 min. time steps that will be extracted
+# on argument testyn, to be used to limit extract for quick
+# command line test
+# Value of 420480 equals 16 years of 20 min. time steps
 if (testyn == 'Y'):
 	steps=2
 	print("test = %s, steps= %s" % (testyn,steps))
