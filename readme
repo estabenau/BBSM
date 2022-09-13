@@ -1,3 +1,10 @@
+2022-09-13 (JLUO)
+This is a revision of the 2015 version.  The model run is from 
+1996-01-01 to 2021-12-31.  In this new vesion, the diffusion 
+coeficient is changed to as function of depth in 6 zones.  The 
+canal and ground and surface flows were based on New RSMGL model
+outputs.  Also, some canal inputs elements are changed.
+
 2015-02-06
 
 This folder contains the source code and cmm files for the
