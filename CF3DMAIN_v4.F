@@ -21,7 +21,7 @@ C *CHECK* Items that should be checked before compiling
      1  ICHCK/0/
 C     TRYING explicit declaration of several data types 
       DATA AVGCONST1/0.0/     
-      IUOUT=11
+      IUOUT=2
 C * * For 2-D hydro select NLEV = 1. 2-d advect-diff use NLEVAD=1
       READ(1,1002)
  1002 FORMAT()
@@ -35,7 +35,6 @@ C   the dynamic coupling through density is turned off.  Salt could
 C   still be one of the constituents in this case.
       NLEVM1=NLEV-1
       NMNP2=NMNP*2
-C   DFSIGM includes reading 2 lines from fort.50 (previously fort.1)
       CALL DFSIGM
       NMHBN=0
       NMVBN=0
@@ -78,7 +77,6 @@ C * All constituents must be initialized, so no need to zero
       CALL AMATZR(DEN2(1,N),NMNP)
       CALL AMATZR(DRHODZ(1,N),NMNP)
  10   CONTINUE
-C    Title line is line 5 in fort.50 (formerly fort.1)
       READ(1,1004)TITLE
  1004 FORMAT(20A4)
       WRITE(IUOUT,1006)TITLE
@@ -160,7 +158,6 @@ C     densities, by using IADVDF=1 and a very large MULTAD
       CALL SLINE(36)
       READ(1,1020)NMBEL
  1020 FORMAT(16I5)
-      WRITE(IUOUT,1024)NMBEL
       NMBEL3=3*NMBEL
       READ(1,1022)(NBN(I),I=1,NMBEL3)
  1022 FORMAT(16I4)
@@ -547,9 +544,8 @@ C        IF(NMHBN .GT. 0)CALL STETAB
       SUBROUTINE BCOND
       INCLUDE 'ALL.CMM'
       DIMENSION DUM(32)
-      OPEN(51,FILE='./Input/GRIDV4/NODES_V4.DAT',STATUS='OLD')
       DO 10 I=1,NMNP
-      READ(51,1002)NEXT(I),NBC(I),XORD(I),YORD(I),DEPTH(I),
+      READ(1,1002)NEXT(I),NBC(I),XORD(I),YORD(I),DEPTH(I),
      1  (DUM(J), J=1,4)
  1002 FORMAT(2I5,3F10.0,2F10.1,2F10.0)
 C * * Since internal and external veloc. must have same rotation
@@ -859,7 +855,7 @@ C * * Element number of side going clockwise
         I1=IBOUND(I,1)
         I2=IBOUND(I,2)
  110  CONTINUE
-      WRITE(11,1002)NBOUND
+      WRITE(2,1002)NBOUND
  1002 FORMAT('NUMBER OF BOUNDARY NODES, NBOUND = ',I7)
       RETURN
       END
@@ -942,6 +938,10 @@ C       are rotated to global upon exit of this routine and kept as global.
       SUBROUTINE CETA2D(ETA,DEPTH,HT,NMNP)
       DIMENSION ETA(1),DEPTH(1),HT(1)
       DO 10 I=1,NMNP
+C     THE NEXT IF LINE TO MAKE SURE HT NEVER GO TO NEGATIVE, ADDED BY JLUO
+      IF (ETA(I) .LT. DEPTH(I))THEN
+       ETA(I)=DEPTH(I)+0.01
+      ENDIF
       HT(I)=ETA(I)-DEPTH(I)
  10   CONTINUE
       RETURN
@@ -950,7 +950,7 @@ C       are rotated to global upon exit of this routine and kept as global.
       INCLUDE 'CINTEG.CMM'
       ICHCK=0
       IF(ABS(H+D) .LT. BOUND) RETURN
-      WRITE(11,1002) H,D,BOUND,TIME
+      WRITE(2,1002) H,D,BOUND,TIME
  1002 FORMAT(15X,'STABILITY CHECK: BOUND EXCEEDED AT NODE ',/
      1  ,5X,'HEIGHT WAS ',E11.4,3X,'DEPTH ',F8.2,5X,'BOUND = ',F6.2,
      2  5X,'TIME IS=',E13.5)
@@ -1320,7 +1320,7 @@ C           VSGMA(I)=VSGMA(I)*OMEGA(I,LEV)/HTAV(I)
       COMMON/SORTNO/K(3)
       DIMENSION IPERM(3,2)
       DATA IPERM/3,1,2,2,3,1/
-      IF(IPRINT .EQ. 2)WRITE(11,1002)
+      IF(IPRINT .EQ. 2)WRITE(2,1002)
  1002 FORMAT(5X,'GEOMETRICAL RELATIONS'/,10X,
      2  'ELEMENT'/,10X,'NUMBER',4X,'A1',11X,'B1',
      3  11X,'A2',11X,'B2',11X,'A3',11X,'B3',10X,'AREA'/)
@@ -1346,14 +1346,14 @@ C      IF(SRCHRDY(I) .LT. ABS(B(I,J)))SRCHRDY(I)=ABS(B(I,J))
  40   CONTINUE
       AREA(I)=0.5*(B(I,1)*A(I,2)-B(I,2)*A(I,1))
       IF(AREA(I) .GT. 0.) GO TO 30
-      WRITE(11,1004) I,K(1),K(2),K(3)
+      WRITE(2,1004) I,K(1),K(2),K(3)
  1004 FORMAT(5X,'NEGATIVE AREA IN ELEMENT:',I4,3I5)
       STOP
  30   VAR=AREA(I)/3.
       DO 50 J=1,3
         DIAGH(K(J))=DIAGH(K(J))+VAR
  50   CONTINUE
-      IF(IPRINT .EQ. 2)WRITE(11,1006)I,A(I,1),B(I,1),A(I,2),B(I,2),
+      IF(IPRINT .EQ. 2)WRITE(2,1006)I,A(I,1),B(I,1),A(I,2),B(I,2),
      1  A(I,3),B(I,3),AREA(I)
  1006 FORMAT(5X,I6,2X,7E13.6)
  10   CONTINUE
@@ -1652,7 +1652,7 @@ C * * HLIMIT IS NEGATIVE
       READ(1,1001)IOPDRY,HLIMIT,HMIN,VOLFCT,HREDRY
  1001 FORMAT(I10,4F10.0)
       IF(IOPDRY .EQ. 1)THEN
-        WRITE(11,1014)IOPDRY,HLIMIT,HMIN,VOLFCT,HREDRY
+        WRITE(2,1014)IOPDRY,HLIMIT,HMIN,VOLFCT,HREDRY
  1014 FORMAT('** DRYING AND WETTING OPTION CHOSEN **',I5/,
      1  'NODES WITH DEPTH > HLIMIT ARE CHOSEN, HLIMIT = ',F8.3/,
      2  'MIN DEPTH ALLOWED BEFORE DRYING, HMIN = ',F8.3/,
@@ -1663,7 +1663,7 @@ C * * HLIMIT IS NEGATIVE
            WRITE(*,'(''NMBDRY TOO LARGE'', 2I7)')NMBDRY,MAXDRY
            STOP
         ENDIF
-        IF(NMBDRY .GT. 0)WRITE(11,1012)NMBDRY,NDRY(1),NDRY(NMBDRY)
+        IF(NMBDRY .GT. 0)WRITE(2,1012)NMBDRY,NDRY(1),NDRY(NMBDRY)
  1012 FORMAT('# DRYING NODES, NMBDRY = ',I5,' FIRST AND LAST ',2I5)
       ENDIF
       RETURN
@@ -1719,8 +1719,6 @@ C          IF(DE .LT. 0.)WRITE(*,*)'NEG DEPTH',I,DE,ICON(I,1),
 C     1      ICON(I,2),ICON(I,3)
           IF(DE .LT. 0.)WRITE(*,*)'NEG DEPTH',I,DE,ICON(I,1),
      1      ICON(I,2),ICON(I,3),'WindSpd',WINDSP
-C	Altered depth (DE/2.2) to simulate increased friction as
-C       if shallower
           CFEL=AN*AN*GRAVT/(DE/2.2)**0.5
 C         CFEL=AN*AN*GRAVT/(DE/3.)**0.333333
           DO 150 J=1,3
@@ -1947,10 +1945,10 @@ C      DISCHS(J)=DIS
 C      CBDIS(I)=CBDIS(I)+BDIS*TINC
       CBDIS(I)=BDIS
 C      IF(ITIME/NOUT*NOUT .NE. ITIME)GO TO 10
-C      WRITE(11,1092)I,CBDIS(I),BDIS
+C      WRITE(2,1092)I,CBDIS(I),BDIS
 C 1092 FORMAT(5X,'* * BOUNDARY',I4,5X,'CUMULATED DISCHARGE:',
 C     1  E15.6,5X,'INSTANTANEOUS DISCHARGE:',E15.6)
-C      WRITE(11,1094)(DISCHS(J), J=1,JEND)
+C      WRITE(2,1094)(DISCHS(J), J=1,JEND)
 C 1094 FORMAT(10E13.6)
  10   CONTINUE
       WRITE(31,1002)ITIME,(CBDIS(I), I=1,NMOSGM)
@@ -2112,7 +2110,7 @@ C * * IF ADJACENT NODE HAS HIGHER ELEVATION AND IS NOT DRY, CREATE VOL SOURCE
       SUBROUTINE SLINE(N)
       CHARACTER*3 STAR
       DATA STAR/'* *'/
-      WRITE(11,1002)(STAR,I=1,N)
+      WRITE(2,1002)(STAR,I=1,N)
  1002 FORMAT(5X,42A3)
       RETURN
       END
@@ -2303,7 +2301,7 @@ C * * THEN CREATE VOLSRC BY SUBTRACTING DVOL TO CONSERVE MASS
       SUBROUTINE VEL(Q,U,V)
       INCLUDE 'PARM2.CMM'
       INCLUDE 'CGRID.CMM'
-      DIMENSION Q(1),U(1),V(1)
+      DIMENSION Q(MXMQ),U(MXNDSL),V(MXNDSL)
       DO 10 I=1,NMNP
       U(I)=Q(2*I-1)
       V(I)=Q(2*I)
@@ -2533,7 +2531,8 @@ C * *  ROTATED JUST AFTER THIS ROUTINE IN THE MAIN PROG.
 C *   For 1-layer solution, nlevad=1, else nlevad=nlev
       IADTM=IADTM+1
 C * * This is previous time step's IT (number of iter. in diffusion)
-      WRITE(*,1002)IADTM,NLEVAD,IT,TINCAD,TIME
+      time_mod=time-floor(time/10000)*10000
+      IF(TIME_MOD .EQ. 10)WRITE(*,1002)IADTM,NLEVAD,IT,TINCAD,TIME
       DO 20 LEV=1,NLEVAD
         DO 10 I=1,NMNP
           NDSTSL(I)=0
@@ -2634,16 +2633,20 @@ C          DENSTY(I,LEV)=999.84+.8245*CONSTITP(I,LEV,ICSALT)-REFDEN
         ELSE
           DENSTY=1000.
         ENDIF
+
         IF(IADTM/NADOUT*NADOUT .EQ. IADTM .AND. ITIME .GE. ISTRT)THEN
           WRITE(IUOUT,1002)IADTM,LEV,IT,TINCAD,TIME
- 1002     FORMAT('ADV-DIF, IADTM=',I8,' LEVEL=',I2,
-     1     ', ITS.=',I3,' TINCAD=',F6.1,' TIME=',F15.1)
+ 1002     FORMAT('ADV-DIFs, IADTM=',I8,' LEVEL=',I2,
+     1  ', ITS.=',I3,' TINCAD=',F6.1,' TIME=',F15.1)
            WRITE(IUOUT,1004)(CONSTITP(I,LEV,1), I=1,NMNP,1)
  1004     FORMAT(F8.2,9F7.2)
+C          WRITE(*,1005)IADTM,NLEVAD,IT,TINCAD,TIME
+C 1005     FORMAT('ADV-DIFs, IADTM=',I8,' LEVEL=',I2,
+C     1  ', ITS.=',I3,' TINCAD=',F6.1,' TIME=',F15.1)
 c          write(17,1088)(CONSTITp(i,lev,ICSALT), i=2,nmnp,3)
-c          write(17,1088)(q(2*i,lev), i=2,nmnp,3)
- 1088     format(50f6.2)
-c 1088     format(50f7.3)
+C         write(17,1088)(q(2*i,lev), i=2,nmnp,3)
+c 1088     format(50f6.2)
+C 1088     format(50f7.3)
         ENDIF
  90   CONTINUE
 C**** now calc. the Density terms for next internal and external mode.
@@ -2892,9 +2895,9 @@ C * *  DIFXX contains diff dt(adv/dif)DXX/(8area)
  170      CONTINUE
  160    CONTINUE
  310  CONTINUE
-C        WRITE(11,1004)(SYSM(I), I=1,NMNP)
+C        WRITE(2,1004)(SYSM(I), I=1,NMNP)
  1004   FORMAT(10E11.3)
-C        WRITE(11,1004)(SYSF(I), I=1,NMNP)
+C        WRITE(2,1004)(SYSF(I), I=1,NMNP)
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C     SOURCE ADDITION TAKES PLACE HERE. ***THIS IS TO BE CUSTOMISED***  C
 C     A SAMPLE COSINE LOADING IS SHOWN BELOW                            C
@@ -3037,7 +3040,7 @@ C *CHECK* Need to handle different constituents
       CHARACTER*1 ACHAR
       CHARACTER*80 TITLE
       SAVE NRCDSK 
-      WRITE(11,1002)
+      WRITE(2,1002)
  1002 FORMAT('ADVECTION-DIFFUSION ACTIVATED'/)
 C * * For now make prescribed nodes at all levels the same.
       READ(9,*)NMPBN(1),IDFVAR,ISWAD,NDISK,ICONC1,ILOOK,
@@ -3057,9 +3060,9 @@ C     trying 4 byte word size for recl by mult NMNP*4
       NRCDSK=0
       READ(9,1004)TITLE
  1004 FORMAT(/A80)
-      WRITE(11,1006)TITLE
+      WRITE(2,1006)TITLE
  1006 FORMAT(A80)
-      WRITE(11,1008)NMPBN(1),IDFVAR,ISWAD,NDISK,ICONC1,
+      WRITE(2,1008)NMPBN(1),IDFVAR,ISWAD,NDISK,ICONC1,
      1  ILOOK,IHOT,IHALF
  1008 FORMAT(10X,
      1  'NUMBER OF PRESCRIBED CONCENTRATION NODES, NMPBN = ',I4/,10X,
@@ -3093,7 +3096,7 @@ C     The half time step is a .5*multad steps.  Don't use ihalf=1
         IF(NADOUT .LT. 1)NADOUT=1
       ENDIF
       DTD2AD=.5*TINCAD
-      WRITE(11,1010)TINCAD,NADOUT,MAXIT
+      WRITE(2,1010)TINCAD,NADOUT,MAXIT
  1010 FORMAT(10X,
      2  'TIME STEP OF FULL 4TH ORD RK INT, TINCAD = ',F12.4/,10X,
      3  'OUTPUT CONTROL, NADOUT = ',I8
@@ -3140,7 +3143,7 @@ C           SFLXBT(I)=0.0
 C           SFLXTP(I)=0.0
 C 720    CONTINUE
 C      ENDIF
-      WRITE(11,1016)CONSTITP(1,1,1),CONSTITP(NMNP,1,1)
+      WRITE(2,1016)CONSTITP(1,1,1),CONSTITP(NMNP,1,1)
  1016 FORMAT('INITIAL CONC ',4E13.5)
       IF(ILOOK .GT. 1)THEN
       DO 40 N=1,NMNP
@@ -3516,7 +3519,8 @@ C * * FALL THRU MEANS POSITION IN THIS ELEMENT
 C * * ADD ELEMENT TO SEARCH ARAY
         LOOKUP(NK,1)=LOOKUP(NK,1)+1
         IF(LOOKUP(NK,1) .GT. MXLKUP-1)THEN
-          WRITE(*,*)'TOO MANY LOOKUP ELEMENTS ',NK,IEL,XN,YN
+          WRITE(*,*)'TOO MANY LOOKUP ELEMENTS ',NK,IEL,XN,YN,MXLKUP,
+     1  LOOKUP(NK,1)
           STOP
         ENDIF
         CALL PUSH
@@ -3548,5 +3552,4 @@ C * * If 4 or 10 node force to node itself.
       ENDIF
       RETURN
       END
-
 
