@@ -557,7 +557,7 @@ C     NOTE order of the columns
       SAVE NMSTRCP1,ISWITCH
       IF(ISWITCH .EQ. 1)THEN
         ISRCEL=0
-       OPEN(921,FILE='./Input/GRIDV3/CANAL_ELEMENTSv3.DAT',
+       OPEN(921,FILE='./Input/GRIDV4/CANAL_ELEMENTSv45.DAT',
      1    FORM='FORMATTED')
         READ(921,*)NMSTRC
 C * Number of structures. Add one to allow for time stamp
@@ -700,7 +700,7 @@ C A SIGMOID CURVE SCALOR IS USED BETWEEN DEPTH OF O TO 5 M F(DEP)=1/{1+EXP(b*dep
       DATA ISWITCH/1/
       SAVE ISWITCH,NMGNSZONESP1
       IF(ISWITCH .EQ. 1)THEN
-       OPEN(921,FILE='./Input/GRIDV3/GNSWCERPELEM.DAT',STATUS='OLD')
+       OPEN(921,FILE='./Input/GRIDV4/GNSWCERPELEM.DAT',STATUS='OLD')
         IGSWEL=0
         READ(921,*)NMGNSZONES
 C * Number of gns zones. Add one to allow for time stamp
