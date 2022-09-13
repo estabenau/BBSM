@@ -1,4 +1,5 @@
 Model reads only the CERPGnSW_run_file.dat. Copy scenario of interest to that location before run.
+The new CERPGnSW_run_file.dat is zipped up to be uploaded to the github, after download unzip (Sep 13, 2022, JLUO)
 
 Available scenarios:
 
