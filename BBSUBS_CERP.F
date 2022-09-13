@@ -16,6 +16,7 @@ C * * These subroutines are set up for 00:00UTC 1996 as time 0.
       SUBROUTINE DEFDIF
       INCLUDE 'ALL.CMM'
       INTEGER*4 ICNMTH(8)
+      REAL *8 SCALER
       DATA ICNMTH/552,1860,2083,2303,2425,2801,2992,3189/
 C * * Here we just define constant diff coefficients *DT/(8*AREA)
 C * * To use variable, define DIFXX and DIFYY here.
@@ -29,19 +30,100 @@ C * * To use variable, define DIFXX and DIFYY here.
      4  '     Depth at which diff no longer depend on depth, ',
      5  ' HUPPERLIM = ',F8.2)
 C * Scale diffusion to hdiffus, square function
-      DXX=DXX/(HDIFFUS*HDIFFUS)
-      DYY=DYY/(HDIFFUS*HDIFFUS)
+C      DXX=DXX/(HDIFFUS*HDIFFUS)
+C      DYY=DYY/(HDIFFUS*HDIFFUS)
       DO 10 I=1,NMEL
         HSUM=0.
+        yyyC=0.
+        XXXC=0.
         DO J=1,3
           IJ=ICON(I,J)
           HSUM=HSUM+HT(IJ)
+          yyyc=yyyc+YORD(IJ)
+          XXXC=XXXC+XORD(IJ)
         ENDDO
         HSUM=HSUM/3.
-        IF(HSUM .GT. HUPPERLIM)HSUM=HUPPERLIM
-C * Make dif coef depth dependent. square function
-        DIFXX(I)=DXX*HSUM*HSUM/AREA(I)*TINC8
-        DIFYY(I)=DYY*HSUM*HSUM/AREA(I)*TINC8
+        YYYC=YYYC/3.
+        XXXC=XXXC/3.
+
+C * Make diffusion coef depth dependent. 
+C * Scale the coefficients with HSUM with sigmoid function f=1.0/(1+exp(b*x+a)), a=23.5555,b=-11.7778 (0.05,0.95,1.75,2.25)   
+
+      IF(YYYC .LT. 24000.0)THEN
+        IF(YYYC .LT. 12000.0)THEN
+C     MANATEE BAY AND BARNE SOUND
+        scaler=0.40
+          IF(HSUM .LT. 2.5)THEN 
+          scaler=0.36875/
+     1 (1.0+exp(-11.7778*HSUM+23.55555))+0.03125
+          ENDIF
+        ELSE
+        SCALER=2.0
+        IF(XXXC .LT. 23000)THEN 
+C     CARD SOUND NEAR SHORE
+        
+         SCALER=1.0
+         IF(HSUM .LT. 2.5)THEN 
+       scaler=0.980469/
+     1 (1.0+exp(-11.7778*HSUM+23.55555))+0.0195313
+         ENDIF
+       ENDIF
+       ENDIF
+      ELSE
+
+C* TURKEY POINT TO CEZAR CREEK
+       IF(YYYC .LT. 32000)THEN
+         SCALER=2.0
+         IF(XXXC .LT. 21000)THEN
+          SCALER=1.0
+          IF(HSUM .LT. 2.5)THEN 
+          scaler=0.980469/
+     1 (1.0+exp(-11.7778*HSUM+23.55555))+0.0195313
+          ENDIF           
+         ENDIF
+       ENDIF
+
+C* TURKEY POINT TO BLACK POINT
+       IF(YYYC .GE. 32000 .AND. YYYC .LT. 40000)THEN
+         SCALER=2.0
+           IF(XXXC .LT. 21000)THEN
+           scaler=0.6
+           IF(HSUM .LT. 2.0)THEN 
+           scaler=0.584375/
+     1 (1.0+exp(-11.7778*HSUM+14.72222))+0.015625
+           ENDIF
+           ENDIF
+       ENDIF
+
+       IF(YYYC .GE. 40000)THEN
+C *       NORTH OF Block Point Canal
+         SCALER=2.0
+         IF(XXXC .LT. 30000)THEN
+           scaler=0.35
+          IF(HSUM .LT. 3.0)THEN 
+          scaler=0.342188/
+     1    (1.0+exp(-11.7778*HSUM+26.4999))+0.0078125
+          ENDIF
+         ENDIF 
+        ENDIF
+
+
+       IF(YYYC .GE. 40000 .AND. YYYC .LT. 41500)THEN
+        IF(XXXC .LE. 20000)THEN
+C *    This is for Black Point CANAL (40000-41500)
+           scaler=1.
+          IF(HSUM .LT. 2.0)THEN 
+       scaler=0.96875/
+     1 (1.0+exp(-11.7778*HSUM+14.72222))+0.03125
+          ENDIF
+         ENDIF
+        ENDIF
+  
+        ENDIF
+
+       DIFXX(I)=DXX*scaler/AREA(I)*TINC8
+       DIFYY(I)=DYY*scaler/AREA(I)*TINC8
+
  10   CONTINUE
 C**** READ IN THE VERTICAL DIFFUSIVITIES
 C      IF(IVDFVAR.EQ.0) THEN
@@ -96,9 +178,8 @@ C 20   CONTINUE
       END
       SUBROUTINE ELINFO
       INCLUDE 'ALL.CMM'
-      OPEN(52,FILE='./Input/GRIDV4/ELEMENTS_V4.DAT',STATUS='OLD')
       DO 15 L=1,NMEL
-      READ(52,1007)NELM(L),(ICON(L,J),J=1,3),CF(L),EDXX(L),EDYY(L),
+      READ(1,1007)NELM(L),(ICON(L,J),J=1,3),CF(L),EDXX(L),EDYY(L),
      1  EDXY(L)
       NILM(NELM(L))=L
  1007 FORMAT(4I5,4F10.0)
@@ -170,35 +251,44 @@ c        ENDIF
 C * * Set prescribed salinities at boundaries.
 C     Input file 19 contains, time [day] and salinity [ppt]
       INCLUDE 'ALL.CMM'
-      COMMON/CSALBC/TIMESF(194),SFSAL(194),TIMECC(4283),CCSAL(4283),
-     1  TIMERC(194),RCSAL(194),TIMEBC(194),BCSAL(194)
-      INTEGER ICOUNTRC,ICOUNTBC,ICOUNTSF,ICOUNTCC
-      SAVE ICOUNTRC,ICOUNTBC,ICOUNTSF,ICOUNTCC
+      COMMON/CSALBC/TIMESF(6673),SFSAL(6673),TIMECC(8265),CCSAL(8265),
+     1  TIMERC(263),RCSAL(263),TIMEBC(261),BCSAL(261)
+C     2  TIMEJC(9704),JCSAL(9704)
+      INTEGER ICOUNTRC,ICOUNTBC,ICOUNTSF,ICOUNTCC,ICOUNTJC
+      SAVE ICOUNTRC,ICOUNTBC,ICOUNTSF,ICOUNTCC,ICOUNTJC
       IF(IADTM .EQ. 1)THEN
+C * * JEWFISH CREEK SALINITY ADDED AS BOUNDARY BY JLUO
+C       OPEN(19,FILE='./Input/Salinity/JCSalinity.dat',
+C     1     STATUS='OLD')
+C        DO I=1,9704
+C          READ(19,*,IOSTAT=IOS)TIMEJC(I),JCSAL(I)
+C          IF(IOS .NE. 0)EXIT
+C        ENDDO
+C        CLOSE(19)
        OPEN(19,FILE='./Input/Salinity/SFSalinity.dat',
      1     STATUS='OLD')
-        DO I=1,194
+        DO I=1,6673
           READ(19,*,IOSTAT=IOS)TIMESF(I),SFSAL(I)
           IF(IOS .NE. 0)EXIT
         ENDDO
         CLOSE(19)
        OPEN(19,FILE='./Input/Salinity/CCSalinity.dat',
      1     STATUS='OLD')
-        DO I=1,4283
+        DO I=1,8265
           READ(19,*,IOSTAT=IOS)TIMECC(I),CCSAL(I)
           IF(IOS .NE. 0)EXIT
         ENDDO
         CLOSE(19)
        OPEN(19,FILE='./Input/Salinity/BB26Salinity.dat',
      1    STATUS='OLD')
-        DO I=1,194
+        DO I=1,263
           READ(19,*,IOSTAT=IOS)TIMERC(I),RCSAL(I)
           IF(IOS .NE. 0)EXIT
         ENDDO
         CLOSE(19)
        OPEN(19,FILE='./Input/Salinity/BB28Salinity.dat',
      1    STATUS='OLD')
-        DO I=1,194
+        DO I=1,261
           READ(19,*,IOSTAT=IOS)TIMEBC(I),BCSAL(I)
           IF(IOS .NE. 0)EXIT
         ENDDO
@@ -226,6 +316,10 @@ C * * Convert time in sec to days.
         ICOUNTCC=ICOUNTCC+1
         GOTO 40
       ENDIF
+C 50   IF(DAY .GT. TIMEJC(ICOUNTJC))THEN
+C        ICOUNTJC=ICOUNTJC+1
+C        GOTO 50
+C      ENDIF
       SALBRC=RCSAL(ICOUNTRC-1)+(DAY-TIMERC(ICOUNTRC-1))/
      1  (TIMERC(ICOUNTRC)-TIMERC(ICOUNTRC-1))*
      2  (RCSAL(ICOUNTRC)-RCSAL(ICOUNTRC-1))
@@ -238,6 +332,10 @@ C * * Convert time in sec to days.
       SALBCC=CCSAL(ICOUNTCC-1)+(DAY-TIMECC(ICOUNTCC-1))/
      1  (TIMECC(ICOUNTCC)-TIMECC(ICOUNTCC-1))*
      2  (CCSAL(ICOUNTCC)-CCSAL(ICOUNTCC-1))
+C * * JEWFISH CREEK ADDED BY JLUO
+C      SALBJC=JCSAL(ICOUNTJC-1)+(DAY-TIMEJC(ICOUNTJC-1))/
+C     1  (TIMEJC(ICOUNTJC)-TIMEJC(ICOUNTJC-1))*
+C     2  (JCSAL(ICOUNTJC)-JCSAL(ICOUNTJC-1))
 C * * Rickenbacker, nodes 3595,3600,1148,1147,1146
       CONSTITBND(3595)=SALBRC
       CONSTITBND(3600)=SALBRC
@@ -249,20 +347,26 @@ C        SALBN3=33.80+0.83*COS(1.99107579D-07*TIME-1.86401164D+00)
       CONSTITBND(1126)=SALBBC
       CONSTITBND(1125)=SALBBC
       CONSTITBND(1124)=SALBBC
-C * * Safety Valve 1073-1099 , Boca Chita 3679, Sands Cut 1070
-      DO I=1073,1099
+C * * Safety Valve 1070-1099 , includes Boca Chita 1070, Sands Cut 3679,1062,1060
+      DO I=1070,1099
         CONSTITBND(I)=SALBSF
       ENDDO
       CONSTITBND(3679)=SALBSF
-      CONSTITBND(1070)=SALBSF
-C * * ABCs 1013 1016-1018, 1032-1034,
-      CONSTITBND(1013)=SALBCC
-      CONSTITBND(1016)=SALBCC
-      CONSTITBND(1017)=SALBCC
-      CONSTITBND(1018)=SALBCC
+C * *  CONSTITBND(1070)=SALBSF
+C * * ABCs AB 1010-1020, C 1032-1036,
+      DO I=1010,1020
+        CONSTITBND(I)=SALBCC
+      ENDDO
       CONSTITBND(1032)=SALBCC
       CONSTITBND(1033)=SALBCC
       CONSTITBND(1034)=SALBCC
+      CONSTITBND(1035)=SALBCC
+      CONSTITBND(1036)=SALBCC
+C * * JEWFISH CREEK, NODES 987,988,989,3757 ADDED BY JLUO
+C      CONSTITBND(987)=SALBJC
+C      CONSTITBND(988)=SALBJC
+C      CONSTITBND(989)=SALBJC
+C      CONSTITBND(3757)=SALBJC
       RETURN
       END
       SUBROUTINE SOURCE
@@ -453,7 +557,7 @@ C     NOTE order of the columns
       SAVE NMSTRCP1,ISWITCH
       IF(ISWITCH .EQ. 1)THEN
         ISRCEL=0
-       OPEN(921,FILE='./Input/GRIDV4/CANAL_ELEMENTS_V4.DAT',
+       OPEN(921,FILE='./Input/GRIDV3/CANAL_ELEMENTSv3.DAT',
      1    FORM='FORMATTED')
         READ(921,*)NMSTRC
 C * Number of structures. Add one to allow for time stamp
@@ -470,7 +574,7 @@ C * Number of structures. Add one to allow for time stamp
 C * Read 1 header line.
         READ(7,*)
         READ(7,1001)(QSTR1(J),J=1,NMSTRCP1)
- 1001   FORMAT(11F8.2)
+ 1001   FORMAT(11F9.3)
         READ(7,1001)(QSTR2(J),J=1,NMSTRCP1)
 C * Find the area for each structure discharge, careful, discharges
 C     and isrcl are in messed up order. Fixed with istr2q which gives
@@ -563,22 +667,32 @@ C Section to modify drag if windspeed is 'high'
       ELSE
         CD=1.2*0.001
       ENDIF
-C REDUCED ROUGHNESS IN BISCAYNE BAY
-      CD=CD*0.5
-C      CD=CD*0.4
-C Further reduced during several storm events here - work-around to a problem
-      if(time .gt. 273844800. .and. time .lt. 274060800.)cd=cd*0.8
-      if(time .gt. 309571200. .and. time .lt. 309787200.)cd=cd*.3
+
+C REDUCED WIND DRAG DUE TO REDUCED WAVE HEIGHT IN SHALLOW WATER  
+C WHEN WINDSP IS OVER 15 M/S WHICH CAN GENERATE WAVE HEIGHT OVER 3 M
+C A SIGMOID CURVE SCALOR IS USED BETWEEN DEPTH OF O TO 5 M F(DEP)=1/{1+EXP(b*dep+a)}, WHERE a=8.83332, b=-2.94444
+      IF (WINDSP .GT. 15)THEN
+      DO 10 I=1,NMNP
+       SCALER=1.0/(1.0+EXP(-2.94444*HT(I)+8.83332))
+       TAUWGX(I)=RR*CD*WINDSP*WINDSP*COS(WDIRC)*SCALER
+       TAUWGY(I)=RR*CD*WINDSP*WINDSP*SIN(WDIRC)*SCALER
+       IF(IRDHOT .EQ. 0 .AND. (TIME-STRTIM) .LT. WTRAMP)THEN
+        TAUWGX(I)=TAUWGX(I)*(TIME-STRTIM)/WTRAMP
+        TAUWGY(I)=TAUWGY(I)*(TIME-STRTIM)/WTRAMP
+       ENDIF
+  10  CONTINUE
+      ELSE
       TAUWGX(1)=RR*CD*WINDSP*WINDSP*COS(WDIRC)
       TAUWGY(1)=RR*CD*WINDSP*WINDSP*SIN(WDIRC)
       IF(IRDHOT .EQ. 0 .AND. (TIME-STRTIM) .LT. WTRAMP)THEN
        TAUWGX(1)=TAUWGX(1)*(TIME-STRTIM)/WTRAMP
        TAUWGY(1)=TAUWGY(1)*(TIME-STRTIM)/WTRAMP
       ENDIF
-      DO 10 I=2,NMNP
+      DO 20 I=2,NMNP
       TAUWGX(I)=TAUWGX(1)
       TAUWGY(I)=TAUWGY(1)
-  10  CONTINUE
+  20  CONTINUE
+      ENDIF
       RETURN
       END
       SUBROUTINE GNSWAT
@@ -586,7 +700,7 @@ C Further reduced during several storm events here - work-around to a problem
       DATA ISWITCH/1/
       SAVE ISWITCH,NMGNSZONESP1
       IF(ISWITCH .EQ. 1)THEN
-       OPEN(921,FILE='./Input/GRIDV4/GNSWCERPELEM_V4.DAT',STATUS='OLD')
+       OPEN(921,FILE='./Input/GRIDV3/GNSWCERPELEM.DAT',STATUS='OLD')
         IGSWEL=0
         READ(921,*)NMGNSZONES
 C * Number of gns zones. Add one to allow for time stamp
@@ -603,7 +717,7 @@ C * Number of gns zones. Add one to allow for time stamp
 C * Skip one header line
         READ(17,*)
         READ(17,1001)(GNSW1(J), J=1,NMGNSZONESP1)
- 1001   FORMAT(F7.2,22F7.2)
+ 1001   FORMAT(F9.2,22F9.4)
         READ(17,1001)(GNSW2(J), J=1,NMGNSZONESP1)
 C       FIXX
 	print*,'last surface flow=',GNSW1(23),GNSW2(23)
